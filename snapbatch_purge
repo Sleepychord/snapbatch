@@ -1,0 +1,13 @@
+#!/bin/bash
+var="${1:-0}"
+if [[ $var =~ ^[0-9]+$ ]]
+ then
+    echo deleting snapbatch branches except the last ${var} ones...
+else
+    echo Please input a number n to keep the last n snapbatch branches!
+    exit 1
+fi
+echo "Please first manually move or delete the ~/snapbatches dir. (too dangerous to automate)" 
+git worktree prune
+git branch | grep -o "__snapbatch.*" | sort | head -n -${var} | xargs git branch -d
+# echo "Use snapbatch_purge --force to directly remove them (branches & codes)."
