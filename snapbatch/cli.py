@@ -44,7 +44,7 @@ def dryrun():
 
 def rscrun():
     comm, copied_wd = main(dryrun=True)
-    copy_comm = f'rsc rsync {copied_wd} :{copied_wd}'
+    copy_comm = f'rsc rsync {copied_wd}/ :{copied_wd}'
     rsc_comms = f'{copy_comm} && rsc {comm}'
     logging.info(f'Running:\n{rsc_comms}')
     os.system(rsc_comms)
