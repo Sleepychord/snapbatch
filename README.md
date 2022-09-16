@@ -10,7 +10,8 @@ pip install snapbatch
 snapbatch [-J your_job_name] [OPTIONS(1)...] [ : [OPTIONS(N)...]] script(0) [args(0)...]
 ```
 
-`snapbatch` is a replacement of `sbatch` to create a snapshot of current working directory, and submit the command to `sbatch`.\n
+`snapbatch` is a replacement of `sbatch` to create a snapshot of current working directory, and submit the command to `sbatch`.
+
 This command simply:
 1. commits the dirty changes of files monitored by git AND all untracked .py/.sh to a new branch. 
 2. mirros this branch to the path of environment `SNAP_BATCHES`, default to `~/snapbatches`. (with `git worktree`, friendly to merge/commit/find/diff on these new workplaces than directly copying.)
@@ -24,3 +25,14 @@ snapbatch_purge [n]
 It keeps the last n snapbatch branches, default 0.
 
 Author: mingding.thu dot gmail.com
+
+### Other tools
+```
+snapbatch-dryrun [-J your_job_name] [OPTIONS(1)...] [ : [OPTIONS(N)...]] script(0) [args(0)...]
+```
+Only mirror the codes and print the `sbatch` command.
+
+```
+snapbatch-rsc [-J your_job_name] [OPTIONS(1)...] [ : [OPTIONS(N)...]] script(0) [args(0)...]
+```
+submit to the FAIR RSC cluster on dev server.

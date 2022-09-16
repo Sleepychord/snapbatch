@@ -12,7 +12,7 @@ def _requirements():
 
 setup(
     name="snapbatch",
-    version=0.3,
+    version='0.3.1',
     description="`snapbatch` is a replacement of `sbatch` to create a snapshot of current working directory, and submit the command to `sbatch`.",
     long_description=Path("README.md").read_text(),
     long_description_content_type="text/markdown",

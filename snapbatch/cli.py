@@ -30,6 +30,7 @@ def main(dryrun=False):
         assert wd.startswith(current_root), f'working dir {wd} should with in gitroot {current_root}'
         relative_path = os.path.relpath(wd, current_root)
         copied_wd = os.path.join(copied_root, relative_path)
+        copied_wd = os.path.normpath(copied_wd)
         comm = f'sbatch --chdir {copied_wd} ' + ' '.join(rest_args)
         if not dryrun:
             logging.info(f'Running:\n{comm}')
@@ -47,7 +48,7 @@ def rscrun():
     rsc_comms = f'{copy_comm} && rsc {comm}'
     logging.info(f'Running:\n{rsc_comms}')
     os.system(rsc_comms)
-    
+
 if __name__ == "__main__":
     main()
 
