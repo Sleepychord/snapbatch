@@ -12,12 +12,16 @@ def _requirements():
 
 setup(
     name="snapbatch",
-    version=0.2,
+    version=0.3,
     description="`snapbatch` is a replacement of `sbatch` to create a snapshot of current working directory, and submit the command to `sbatch`.",
     long_description=Path("README.md").read_text(),
     long_description_content_type="text/markdown",
     install_requires=_requirements(),
-    entry_points={"console_scripts": ["snapbatch = snapbatch.cli:main"]},
+    entry_points={"console_scripts": [
+        "snapbatch = snapbatch.cli:main", 
+        "snapbatch-dryrun = snapbatch.cli:dryrun",
+        "snapbatch-rsc= snapbatch.cli:rscrun"
+        ]},
     packages=find_packages(),
     url="",
     author="Ming Ding",

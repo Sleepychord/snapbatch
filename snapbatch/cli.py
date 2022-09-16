@@ -13,7 +13,7 @@ def parse_job_name(argv):
                 return argv[i+1]
     return None
 
-def main():
+def main(dryrun=False):
     rest_args = sys.argv[1:]
     if len(rest_args) == 0:
         print(Instruction)
@@ -31,9 +31,23 @@ def main():
         relative_path = os.path.relpath(wd, current_root)
         copied_wd = os.path.join(copied_root, relative_path)
         comm = f'sbatch --chdir {copied_wd} ' + ' '.join(rest_args)
-        logging.info(f'Runing:\n\t {comm}')
-        os.system(comm)
+        if not dryrun:
+            logging.info(f'Running:\n{comm}')
+            os.system(comm)
+        else:
+            logging.info(f'ToRun:\n{comm}')
+            return comm, copied_wd
 
+def dryrun():
+    main(dryrun=True)
+
+def rscrun():
+    comm, copied_wd = main(dryrun=True)
+    copy_comm = f'rsc rsync {copied_wd} :{copied_wd}'
+    rsc_comms = f'{copy_comm} && rsc {comm}'
+    logging.info(f'Running:\n{rsc_comms}')
+    os.system(rsc_comms)
+    
 if __name__ == "__main__":
     main()
 
