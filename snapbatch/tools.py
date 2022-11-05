@@ -45,7 +45,7 @@ def new_branch(repo, timestamp):
     return nb, oh, ob
 
 def search_new_codes(repo):
-    code_suffixes = ['py', 'sh']
+    code_suffixes = ['py', 'sh', 'hostfile', 'yaml']
     filtered = [
         fl for fl in repo.untracked_files 
         if fl.split('.')[-1] in code_suffixes
@@ -65,12 +65,12 @@ def commit_changes(repo, timestamp):
 def pipeline(jobname=None):
     repo = get_working_dir_git()
     dt = datetime.now()
-    timestamp = str(dt.timestamp())
+    timestamp = timestamp_raw = str(int(dt.timestamp()*1000)) # ms
     if jobname is not None:
         timestamp += '_' + jobname
     else:
         logging.warning(f'No job name specified. It''s highly recommended to set via `-J` or `--job-name` for snapbatch and sbatch.')
-    home = os.environ.get('SNAP_BATCHES', '~/snapbatches')
+    home = os.environ.get('SNAPBATCH_PATH', '~/snapbatches')
     home = os.path.expanduser(home)
     snap_path = os.path.join(home, timestamp) # TODO job name
     os.makedirs(snap_path, exist_ok=False)
@@ -96,7 +96,7 @@ def pipeline(jobname=None):
     repo.head.reset(oh, '--soft')
     # a new git command?
     os.system(f'git worktree add {snap_path} {nb}')
-    return snap_path, repo.working_tree_dir
+    return snap_path, repo.working_tree_dir, timestamp_raw
 
 if __name__ == "__main__":
     pipeline('testtool')

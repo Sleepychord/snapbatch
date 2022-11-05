@@ -12,7 +12,7 @@ def _requirements():
 
 setup(
     name="snapbatch",
-    version='0.3.2',
+    version='0.4.0',
     description="`snapbatch` is a replacement of `sbatch` to create a snapshot of current working directory, and submit the command to `sbatch`.",
     long_description=Path("README.md").read_text(),
     long_description_content_type="text/markdown",
@@ -20,10 +20,11 @@ setup(
     entry_points={"console_scripts": [
         "snapbatch = snapbatch.cli:main", 
         "snapbatch-dryrun = snapbatch.cli:dryrun",
-        "snapbatch-rsc= snapbatch.cli:rscrun"
+        "snapbatch-rsc = snapbatch.cli:rscrun",
+        "snapbatch-launch = snapbatch.cli:launchrun"
         ]},
     packages=find_packages(),
-    url="",
+    url="https://github.com/Sleepychord/snapbatch",
     author="Ming Ding",
     author_email="mingding.thu@gmail.com",
     scripts={"snapbatch_purge"},

@@ -22,7 +22,7 @@ def main(dryrun=False):
         jobname = parse_job_name(rest_args)
         if jobname is not None:
             logging.info(f'Found job-name `{jobname}` by parsing -J or --job-name.')
-        copied_root, current_root = pipeline(jobname)
+        copied_root, current_root, timestamp = pipeline(jobname)
         wd = os.getcwd()
         copied_root = os.path.abspath(copied_root)
         current_root = os.path.abspath(current_root)
@@ -36,18 +36,26 @@ def main(dryrun=False):
             logging.info(f'Running:\n{comm}')
             os.system(comm)
         else:
-            logging.info(f'ToRun:\n{comm}')
-            return comm, copied_wd
+            return comm, copied_wd, timestamp
 
 def dryrun():
-    main(dryrun=True)
+    comm, copied_wd, timestamp = main(dryrun=True)
+    logging.info(f'ToRun:\n{comm}')
 
 def rscrun():
-    comm, copied_wd = main(dryrun=True)
+    comm, copied_wd, timestamp = main(dryrun=True)
     copy_comm = f'rsc rsync {copied_wd}/ :{copied_wd}'
     rsc_comms = f'{copy_comm} && rsc {comm}'
     logging.info(f'Running:\n{rsc_comms}')
     os.system(rsc_comms)
+
+def launchrun():
+    comm, copied_wd, timestamp = main(dryrun=True)
+    from .launcher import launch
+    launch(
+        ['--job-id', timestamp]
+        + comm.split()[1:] # args after snapbatch
+        )
 
 if __name__ == "__main__":
     main()
