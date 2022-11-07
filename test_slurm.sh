@@ -7,4 +7,6 @@
 #SBATCH --time 0-00:01:00
 
 pwd
-srun bash -c 'echo "ended at `date` on `hostname`"'
+bash -c 'echo "ended at `date` on `hostname`"'
+bash -c 'env'
+# srun bash -c 'echo "ended at `date` on `hostname`"'

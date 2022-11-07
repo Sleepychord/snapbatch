@@ -136,6 +136,7 @@ def main():
         current_env["SLURM_JOB_NAME"] = str(args.job_name)
         current_env["SLURM_NTASKS"] = str(dist_world_size)
         current_env["SLURM_NODEID"] = str(args.node_rank)
+        current_env["SLURM_JOB_NUM_NODES"] = str(args.nnodes)
     else:
         raise NotImplementedError
 
@@ -166,28 +167,27 @@ def main():
                 # "--local_rank={}".format(local_rank)
             ] + args.training_script_args
 
-        sig_names = {2: "SIGINT", 15: "SIGTERM"}
-        last_return_code = None
-
-        def sigkill_handler(signum, frame):
-            for process in processes:
-                print(f"Killing subprocess {process.pid}")
-                try:
-                    process.kill()
-                except Exception as e:
-                    pass
-            if last_return_code is not None:
-                raise subprocess.CalledProcessError(returncode=last_return_code, cmd=cmd)
-            if signum in sig_names:
-                print(f"Main process received {sig_names[signum]}, exiting")
-            sys.exit(1)
-
-        # pass SIGINT/SIGTERM to children if the parent is being terminated
-        signal.signal(signal.SIGINT, sigkill_handler)
-        signal.signal(signal.SIGTERM, sigkill_handler)
-
         process = subprocess.Popen(cmd, env=current_env)
         processes.append(process)
+
+    # Handle termination
+    sig_names = {2: "SIGINT", 15: "SIGTERM"}
+    last_return_code = None
+    def sigkill_handler(signum, frame):
+        for process in processes:
+            print(f"Killing subprocess {process.pid}")
+            try:
+                process.kill()
+            except Exception as e:
+                pass
+        if last_return_code is not None:
+            raise subprocess.CalledProcessError(returncode=last_return_code, cmd=cmd)
+        if signum in sig_names:
+            print(f"Main process received {sig_names[signum]}, exiting")
+        sys.exit(1)
+    # pass SIGINT/SIGTERM to children if the parent is being terminated
+    signal.signal(signal.SIGINT, sigkill_handler)
+    signal.signal(signal.SIGTERM, sigkill_handler)
 
     alive_processes = set(processes)
     while len(alive_processes):

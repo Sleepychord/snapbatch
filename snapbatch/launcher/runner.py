@@ -9,6 +9,7 @@ per rank for training.
 import os
 import sys
 import json
+import signal
 import shutil
 import base64
 import argparse
@@ -390,6 +391,27 @@ def main(args=None):
 
     logger.info("cmd = {}".format(' '.join(cmd)))
     result = subprocess.Popen(cmd, env=env, cwd=os.path.abspath(args.chdir))
+
+    # if stop the launch process, stop all.
+    sig_names = {2: "SIGINT", 15: "SIGTERM"}
+    last_return_code = None
+    processes = [result]
+    def sigkill_handler(signum, frame):
+        for process in processes:
+            print(f"Terminating subprocess {process.pid}")
+            try:
+                process.terminate()
+            except Exception as e:
+                pass
+        if last_return_code is not None:
+            raise subprocess.CalledProcessError(returncode=last_return_code, cmd=cmd)
+        if signum in sig_names:
+            print(f"Main process received {sig_names[signum]}, exiting")
+        sys.exit(1)
+    # pass SIGINT/SIGTERM to children if the parent is being terminated
+    signal.signal(signal.SIGINT, sigkill_handler)
+    signal.signal(signal.SIGTERM, sigkill_handler)
+
     result.wait()
 
     # In case of failure must propagate the error-condition back to the caller (usually shell). The
