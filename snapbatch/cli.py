@@ -51,7 +51,7 @@ def rscrun():
 
 def launchrun():
     comm, copied_wd, timestamp = main(dryrun=True)
-    os.makedirs(os.path.join(copied_wd, 'snapbatch_backup_logs', exist_ok=True))
+    os.makedirs(os.path.join(copied_wd, 'snapbatch_backup_logs'), exist_ok=True)
     from .launcher import launch
     launch(
         ['--job-id', timestamp]

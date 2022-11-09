@@ -97,9 +97,9 @@ def main():
     local_gpu_ids = world_info[local_node]
     num_local_procs = len(local_gpu_ids)
     logger.info(
-        "nnodes={}, num_local_procs={}, node_rank={}".format(args.nnodes,
+        "nnodes={}, num_local_procs={}, node_rank={}, master_addr={}".format(args.nnodes,
                                                              num_local_procs,
-                                                             args.node_rank),
+                                                             args.node_rank, args.master_addr),
     )
 
     global_rank_mapping = defaultdict(list)
@@ -128,6 +128,7 @@ def main():
         current_env["TORCHELASTIC_RUN_ID"] = str(args.job_id)
         current_env["GROUP_RANK"] = str(args.node_rank)
         current_env["LOCAL_WORLD_SIZE"] = str(num_local_procs)
+        current_env["NUM_NODES"] = str(args.nnodes)
     elif args.env_style == 'slurm':
         passed_node_list = [args.master_addr] + node_list[1:]
         current_env['SLURM_NODELIST'] = ','.join(passed_node_list)
@@ -141,6 +142,7 @@ def main():
         raise NotImplementedError
 
     processes = []
+    fouts = {}
     for local_rank in range(0, num_local_procs):
         # each process's rank
         dist_rank = global_rank_mapping[local_node][local_rank]
@@ -167,9 +169,15 @@ def main():
                 # "--local_rank={}".format(local_rank)
             ] + args.training_script_args
 
-        process = subprocess.Popen(cmd, env=current_env)
+        if os.path.exists('snapbatch_backup_logs'):
+            fouts[dist_rank] = open(os.path.join('snapbatch_backup_logs', f'rank_{dist_rank}.log'), 'wb') # TODO close
+        else:
+            raise ValueError('no snapbatch_backup_logs')
+        process = subprocess.Popen(cmd, env=current_env, stdout=fouts[dist_rank], stderr=fouts[dist_rank], bufsize=128)
         processes.append(process)
-
+        process.saved_global_rank = dist_rank # save it 
+        
+        
     # Handle termination
     sig_names = {2: "SIGINT", 15: "SIGTERM"}
     last_return_code = None
@@ -194,7 +202,6 @@ def main():
         finished_processes = []
         for process in alive_processes:
             if process.poll() is None:
-                # the process is still running
                 continue
             else:
                 if process.returncode != 0:
@@ -205,7 +212,7 @@ def main():
                     finished_processes.append(process)
         alive_processes = set(alive_processes) - set(finished_processes)
 
-        time.sleep(1)
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":

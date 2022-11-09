@@ -9,6 +9,7 @@ per rank for training.
 import os
 import sys
 import json
+import time
 import signal
 import shutil
 import base64
@@ -22,7 +23,7 @@ from .constants import PDSH_LAUNCHER, OPENMPI_LAUNCHER, MVAPICH_LAUNCHER, TORCH_
 from ..tools import logging as logger
 
 DLTS_HOSTFILE = "/job/hostfile"
-EXPORT_ENVS = ["NCCL", "PYTHON", "MV2", 'UCX', "CONDA", "PATH"]
+EXPORT_ENVS = ["NCCL", "PYTHON", "MV2", 'UCX', "PATH"]
 DEEPSPEED_ENVIRONMENT_NAME = ".snapbatch_env"
 DEEPSPEED_ENVIRONMENT_PATHS = [os.path.expanduser("~"), '.']
 PDSH_MAX_FAN_OUT = 1024
@@ -392,7 +393,10 @@ def main(args=None):
     logger.info("cmd = {}".format(' '.join(cmd)))
     result = subprocess.Popen(cmd, env=env, cwd=os.path.abspath(args.chdir))
 
-    # if stop the launch process, stop all.
+    # if stop the launch process, stop all. This is only useful for single-node
+    # for pdsh, it has no method to kill the launched process on each node. use:
+    #   pdsh -w ssh:node[0-x] "ps -ef | grep taskname | awk '{print \$2}' | xargs kill -9"
+
     sig_names = {2: "SIGINT", 15: "SIGTERM"}
     last_return_code = None
     processes = [result]
@@ -402,6 +406,7 @@ def main(args=None):
             try:
                 process.terminate()
             except Exception as e:
+                print(e)
                 pass
         if last_return_code is not None:
             raise subprocess.CalledProcessError(returncode=last_return_code, cmd=cmd)
@@ -412,6 +417,10 @@ def main(args=None):
     signal.signal(signal.SIGINT, sigkill_handler)
     signal.signal(signal.SIGTERM, sigkill_handler)
 
+    time.sleep(2) # wait 2s for node launcher to print
+    p = os.path.join(args.chdir, 'snapbatch_backup_logs', 'rank_0.log')
+    print(f'Please run `tail -f {p}` to monitor the outputs from rank 0.')
+
     result.wait()
 
     # In case of failure must propagate the error-condition back to the caller (usually shell). The
@@ -419,7 +428,6 @@ def main(args=None):
     # unnecessary noise we just quietly exit here with the same code as the subprocess
     if result.returncode > 0:
         sys.exit(result.returncode)
-
 
 if __name__ == "__main__":
     main()
